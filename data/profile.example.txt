@@ -1,0 +1,18 @@
+NAME: Your Name
+
+BACKGROUND:
+[Your school, major, year, relevant experience summary]
+
+SKILLS:
+[Comma-separated: marketing, data analysis, Excel, etc.]
+
+CAREER INTERESTS:
+[Target roles and industries]
+
+INTERESTS:
+[Personal interests relevant to your career]
+
+TONE PREFERENCES:
+- Natural, conversational voice
+- No em dashes
+- Opens and closes strong

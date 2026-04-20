@@ -1,0 +1,27 @@
+# Python
+venv/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+
+# Personal data — never commit your resume, template, or cover letters
+data/resume.docx
+data/template.docx
+data/profile.txt
+examples/
+output/
+
+# Claude Code internal files
+.claude
+.claude/
+
+# macOS
+.DS_Store
+
+# Temp upload files
+output/_upload_*
+
+# NLTK local data (downloaded at runtime)
+nltk_data/

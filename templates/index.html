@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cover Letter Generator</title>
+<style>
+  /* ── Reset & base ─────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:       #0f1117;
+    --surface:  #1a1d27;
+    --surface2: #242736;
+    --border:   #2e3248;
+    --accent:   #6c63ff;
+    --accent2:  #4ecdc4;
+    --danger:   #ff6b6b;
+    --warn:     #ffd166;
+    --success:  #06d6a0;
+    --text:     #e8eaf0;
+    --muted:    #7c7f96;
+    --radius:   10px;
+    --font:     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── Layout ───────────────────────────────────── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  header h1 { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
+  header .badge {
+    font-size: 11px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 20px;
+    color: var(--muted);
+  }
+  #llm-badge {
+    margin-left: auto;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid;
+  }
+  #llm-badge.on  { background: #06d6a015; border-color: var(--success); color: var(--success); }
+  #llm-badge.off { background: #7c7f9615; border-color: var(--border);  color: var(--muted); }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 380px 1fr 280px;
+    gap: 0;
+    height: calc(100vh - 53px);
+    overflow: hidden;
+  }
+
+  /* ── Panel base ───────────────────────────────── */
+  .panel {
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .panel:last-child { border-right: none; }
+
+  /* ── Cards ────────────────────────────────────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  /* ── Form elements ────────────────────────────── */
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+  input[type="text"], textarea, select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  input[type="text"]:focus, textarea:focus {
+    border-color: var(--accent);
+  }
+  textarea { resize: vertical; }
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* ── File slots ───────────────────────────────── */
+  .file-slot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface2);
+    border: 1px dashed var(--border);
+    border-radius: 7px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: border-color .15s;
+  }
+  .file-slot:hover { border-color: var(--accent); }
+  .file-slot .icon { font-size: 18px; flex-shrink: 0; }
+  .file-slot .info { flex: 1; min-width: 0; }
+  .file-slot .info .name {
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .file-slot .info .meta { font-size: 11px; color: var(--muted); }
+  .file-slot input[type="file"] { display: none; }
+  .file-slot.loaded { border-color: var(--success); border-style: solid; }
+
+  /* ── Buttons ──────────────────────────────────── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 9px 18px;
+    border-radius: 7px;
+    border: none;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity .15s, transform .1s;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+  .btn-primary { background: var(--accent);  color: #fff; }
+  .btn-success { background: var(--success); color: #000; }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-full { width: 100%; }
+
+  /* ── Generate button area ─────────────────────── */
+  #generate-area {
+    position: sticky;
+    bottom: 0;
+    background: var(--bg);
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    margin-top: auto;
+  }
+
+  /* ── Draft editor ─────────────────────────────── */
+  .section-editor { margin-bottom: 14px; }
+  .section-editor label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .section-editor textarea {
+    min-height: 70px;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  #draft-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  /* ── Keyword panel ────────────────────────────── */
+  #ats-score-ring {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px;
+    background: var(--surface2);
+    border-radius: 8px;
+    margin-bottom: 14px;
+  }
+  .score-circle {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    border: 3px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .score-circle.good   { border-color: var(--success); color: var(--success); }
+  .score-circle.ok     { border-color: var(--warn);    color: var(--warn); }
+  .score-circle.poor   { border-color: var(--danger);  color: var(--danger); }
+  .score-meta { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  .kw-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .kw-chip {
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    border: 1px solid;
+    font-weight: 500;
+  }
+  .kw-chip.matched { border-color: var(--success); color: var(--success); background: #06d6a012; }
+  .kw-chip.missing { border-color: var(--danger);  color: var(--danger);  background: #ff6b6b12; }
+
+  /* ── Output history ───────────────────────────── */
+  .output-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .output-item:last-child { border-bottom: none; }
+  .output-item .fname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .output-item .meta  { color: var(--muted); font-size: 11px; }
+
+  /* ── Loading / status ─────────────────────────── */
+  #status-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 8px 20px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 100;
+    transform: translateY(100%);
+    transition: transform .2s;
+  }
+  #status-bar.visible { transform: translateY(0); }
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Scrollbar ────────────────────────────────── */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+  .divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+  /* ── Toast ────────────────────────────────────── */
+  #toast {
+    position: fixed;
+    top: 68px; right: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    max-width: 280px;
+    z-index: 200;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity .2s, transform .2s;
+    pointer-events: none;
+  }
+  #toast.visible { opacity: 1; transform: translateY(0); }
+  #toast.error   { border-color: var(--danger); }
+  #toast.success { border-color: var(--success); }
+
+  /* ── Empty state ──────────────────────────────── */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .empty-state .icon { font-size: 32px; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <span style="font-size:20px;">&#9993;</span>
+  <h1>Cover Letter Generator</h1>
+  <span class="badge">Local · Free · No API</span>
+  <span id="llm-badge" class="off">&#9889; LLM: Off</span>
+</header>
+
+<div class="layout">
+
+  <!-- ── LEFT: Inputs ──────────────────────────── -->
+  <div class="panel" id="input-panel">
+
+    <div class="card">
+      <div class="card-title">Job Details</div>
+      <div class="row field">
+        <div>
+          <label>Company *</label>
+          <input type="text" id="company" placeholder="e.g. USGA" autocomplete="off">
+        </div>
+        <div>
+          <label>Role *</label>
+          <input type="text" id="role" placeholder="e.g. Marketing Manager" autocomplete="off">
+        </div>
+      </div>
+      <div class="field">
+        <label>Hiring Manager (optional)</label>
+        <input type="text" id="hiring_manager" placeholder="e.g. Jane Smith">
+      </div>
+      <div class="field">
+        <label>Job Description *</label>
+        <textarea id="job_description" rows="10"
+          placeholder="Paste the full job description here&#8230;"></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Source Files</div>
+      <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">
+        Default files auto-loaded from <code>/data</code>. Click to override.
+      </p>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+
+        <div class="file-slot" id="slot-template"
+             onclick="document.getElementById('up-template').click()">
+          <span class="icon">&#128196;</span>
+          <div class="info">
+            <div class="name" id="slot-template-name">template.docx</div>
+            <div class="meta" id="slot-template-meta">Click to replace</div>
+          </div>
+          <input type="file" id="up-template" accept=".docx"
+                 onchange="handleUpload(this,'template')">
+        </div>
+
+        <div class="file-slot" id="slot-resume"
+             onclick="document.getElementById('up-resume').click()">
+          <span class="icon">&#128203;</span>
+          <div class="info">
+            <div class="name" id="slot-resume-name">resume.docx</div>
+            <div class="meta" id="slot-resume-meta">Click to replace</div>
+          </div>
+          <input type="file" id="up-resume" accept=".docx"
+                 onchange="handleUpload(this,'resume')">
+        </div>
+
+        <div class="file-slot" id="slot-profile"
+             onclick="document.getElementById('up-profile').click()">
+          <span class="icon">&#128100;</span>
+          <div class="info">
+            <div class="name" id="slot-profile-name">profile.txt</div>
+            <div class="meta" id="slot-profile-meta">Click to replace</div>
+          </div>
+          <input type="file" id="up-profile" accept=".txt"
+                 onchange="handleUpload(this,'profile')">
+        </div>
+
+        <div class="file-slot" style="cursor:default;">
+          <span class="icon">&#128193;</span>
+          <div class="info">
+            <div class="name">Writing Examples</div>
+            <div class="meta" id="examples-meta">Loading&#8230;</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="generate-area">
+      <button class="btn btn-primary btn-full" id="btn-generate" onclick="generate()">
+        &#9654; Generate Cover Letter
+      </button>
+    </div>
+  </div>
+
+  <!-- ── CENTER: Draft editor ───────────────────── -->
+  <div class="panel" id="draft-panel">
+    <div id="draft-empty" class="empty-state">
+      <div class="icon">&#9998;&#65039;</div>
+      Fill in the job details and click<br><strong>Generate Cover Letter</strong>
+    </div>
+
+    <div id="draft-content" style="display:none;">
+      <div class="card" style="flex-shrink:0;">
+        <div class="card-title">Draft — Edit Before Exporting</div>
+        <div id="draft-actions">
+          <button class="btn btn-outline btn-sm" onclick="regenerate()">&#8635; Regenerate</button>
+          <button class="btn btn-outline btn-sm" onclick="copyText()">&#8998; Copy Text</button>
+        </div>
+        <div class="divider" style="margin-bottom:14px;"></div>
+
+        <div class="section-editor">
+          <label>Date</label>
+          <input type="text" id="sec-date">
+        </div>
+        <div class="section-editor">
+          <label>Salutation</label>
+          <input type="text" id="sec-salutation">
+        </div>
+        <div class="section-editor">
+          <label>Opening Paragraph</label>
+          <textarea id="sec-opening" rows="4"></textarea>
+        </div>
+        <div class="section-editor">
+          <label>Body &#8212; Paragraph 1</label>
+          <textarea id="sec-body1" rows="4"></textarea>
+        </div>
+        <div class="section-editor">
+          <label>Body &#8212; Paragraph 2</label>
+          <textarea id="sec-body2" rows="4"></textarea>
+        </div>
+        <div class="section-editor">
+          <label>Body &#8212; Paragraph 3</label>
+          <textarea id="sec-body3" rows="4"></textarea>
+        </div>
+        <div class="section-editor">
+          <label>Closing</label>
+          <textarea id="sec-closing" rows="3"></textarea>
+        </div>
+        <div class="section-editor">
+          <label>Name / Signature</label>
+          <input type="text" id="sec-name">
+        </div>
+      </div>
+
+      <div class="card" style="flex-shrink:0;">
+        <div class="card-title">Export</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-success" id="btn-export-docx"
+                  onclick="exportFile('docx')">&#11015; Download DOCX</button>
+          <button class="btn btn-outline" id="btn-export-pdf"
+                  onclick="exportFile('pdf')">&#11015; Download PDF</button>
+        </div>
+        <div id="export-note"
+             style="font-size:11px; color:var(--muted); margin-top:8px; display:none;">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT: ATS + history ───────────────────── -->
+  <div class="panel" id="analysis-panel">
+
+    <div class="card">
+      <div class="card-title">ATS Alignment</div>
+      <p id="ats-empty" style="color:var(--muted); font-size:12px;">
+        Generate a letter to see keyword coverage.
+      </p>
+      <div id="ats-content" style="display:none;">
+        <div id="ats-score-ring">
+          <div class="score-circle" id="ats-circle">&#8211;</div>
+          <div class="score-meta">
+            <strong id="ats-score-label">&#8211;</strong><br>
+            <span id="ats-matched-label">&#8211; matched</span><br>
+            <span id="ats-density-label">&#8211; density</span>
+          </div>
+        </div>
+        <div class="card-title" style="margin-bottom:8px;">Matched Keywords</div>
+        <div class="kw-list" id="kw-matched"></div>
+        <div class="card-title" style="margin-top:14px; margin-bottom:8px;">Missing Keywords</div>
+        <div class="kw-list" id="kw-missing"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"
+           style="display:flex; justify-content:space-between; align-items:center;">
+        Recent Outputs
+        <button class="btn btn-outline btn-sm" onclick="loadOutputs()"
+                style="font-size:10px; padding:3px 8px;">&#8635;</button>
+      </div>
+      <div id="outputs-list">
+        <div style="color:var(--muted); font-size:12px;">No files yet.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Status bar -->
+<div id="status-bar">
+  <div class="spinner"></div>
+  <span id="status-text">Working&#8230;</span>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+"use strict";
+
+// ── XSS-safe DOM helpers ─────────────────────────────────────────────────────
+
+/** Create an element, optionally setting text and class list */
+function el(tag, textContent, classes) {
+  const node = document.createElement(tag);
+  if (textContent !== undefined) node.textContent = textContent;
+  if (classes) classes.forEach(c => node.classList.add(c));
+  return node;
+}
+
+/** Safely set text content of an existing element */
+function setText(id, text) {
+  const node = document.getElementById(id);
+  if (node) node.textContent = text;
+}
+
+/** Empty a container element */
+function clear(id) {
+  const node = document.getElementById(id);
+  if (node) node.textContent = "";
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let lastCompany = "";
+let lastRole = "";
+let uploadedFiles = {};
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const res = await fetch("/api/defaults");
+    const d = await res.json();
+
+    updateSlot("template", d.template);
+    updateSlot("resume",   d.resume);
+    updateSlot("profile",  d.profile);
+
+    setText("examples-meta",
+      d.examples.count > 0
+        ? d.examples.count + " examples loaded"
+        : "No examples found");
+
+    const badge = document.getElementById("llm-badge");
+    if (d.llm_available) {
+      badge.textContent = "\u26A1 LLM: On";
+      badge.className = "on";
+    } else {
+      badge.textContent = "\u26A1 LLM: Off";
+      badge.className = "off";
+    }
+  } catch (e) {
+    showToast("Could not connect to server — is app.py running?", "error");
+  }
+  loadOutputs();
+}
+
+function updateSlot(key, info) {
+  if (!info || !info.exists) return;
+  const slot = document.getElementById("slot-" + key);
+  if (slot) slot.classList.add("loaded");
+  setText("slot-" + key + "-name", info.name);
+  setText("slot-" + key + "-meta", info.size_kb + " KB \u00B7 default");
+}
+
+// ── File uploads ──────────────────────────────────────────────────────────────
+function handleUpload(input, key) {
+  const file = input.files[0];
+  if (!file) return;
+  uploadedFiles[key] = file;
+  const slot = document.getElementById("slot-" + key);
+  if (slot) slot.classList.add("loaded");
+  setText("slot-" + key + "-name", file.name);
+  setText("slot-" + key + "-meta", (file.size / 1024).toFixed(1) + " KB \u00B7 uploaded");
+  showToast(file.name + " loaded", "success");
+}
+
+// ── Generate ──────────────────────────────────────────────────────────────────
+async function generate() {
+  const company = document.getElementById("company").value.trim();
+  const role    = document.getElementById("role").value.trim();
+  const jd      = document.getElementById("job_description").value.trim();
+
+  if (!company) { showToast("Company name is required", "error"); return; }
+  if (!role)    { showToast("Role is required", "error"); return; }
+  if (!jd)      { showToast("Paste a job description first", "error"); return; }
+
+  lastCompany = company;
+  lastRole = role;
+
+  const form = new FormData();
+  form.append("company", company);
+  form.append("role", role);
+  form.append("job_description", jd);
+  form.append("hiring_manager",
+    document.getElementById("hiring_manager").value.trim());
+
+  if (uploadedFiles.template) form.append("template_file", uploadedFiles.template);
+  if (uploadedFiles.resume)   form.append("resume_file",   uploadedFiles.resume);
+  if (uploadedFiles.profile)  form.append("profile_file",  uploadedFiles.profile);
+
+  setLoading(true, "Generating cover letter\u2026");
+  try {
+    const res = await fetch("/api/generate", { method: "POST", body: form });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error || "Generation failed", "error"); return; }
+
+    renderDraft(data.sections);
+    renderATS(data.ats, data.keywords);
+    showToast(
+      data.llm_used ? "Generated with local LLM" : "Generated (rule-based mode)",
+      "success");
+  } catch (e) {
+    showToast("Network error: " + e.message, "error");
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function regenerate() { await generate(); }
+
+// ── Draft ─────────────────────────────────────────────────────────────────────
+function renderDraft(s) {
+  document.getElementById("draft-empty").style.display = "none";
+  document.getElementById("draft-content").style.display = "block";
+
+  const fields = ["date","salutation","opening","body1","body2","body3","closing","name"];
+  fields.forEach(f => {
+    const el = document.getElementById("sec-" + f);
+    if (el) el.value = s[f] || "";
+  });
+}
+
+function collectSections() {
+  const fields = ["date","salutation","opening","body1","body2","body3","closing","name"];
+  const s = {};
+  fields.forEach(f => {
+    const el = document.getElementById("sec-" + f);
+    s[f] = el ? el.value : "";
+  });
+  return s;
+}
+
+// ── ATS ───────────────────────────────────────────────────────────────────────
+function renderATS(ats) {
+  document.getElementById("ats-empty").style.display = "none";
+  document.getElementById("ats-content").style.display = "block";
+
+  const circle = document.getElementById("ats-circle");
+  circle.textContent = ats.score + "%";
+  circle.className = "score-circle " +
+    (ats.score >= 70 ? "good" : ats.score >= 40 ? "ok" : "poor");
+
+  setText("ats-score-label",
+    ats.score >= 70 ? "Strong alignment" :
+    ats.score >= 40 ? "Moderate alignment" : "Needs improvement");
+  setText("ats-matched-label",
+    ats.matched.length + " / " + ats.total_keywords + " keywords matched");
+  setText("ats-density-label", ats.density + "% keyword density");
+
+  renderKeywordChips("kw-matched", ats.matched, "matched");
+  renderKeywordChips("kw-missing", ats.missing, "missing");
+}
+
+function renderKeywordChips(containerId, keywords, chipClass) {
+  const container = document.getElementById(containerId);
+  container.textContent = "";  // clear safely
+
+  if (!keywords || keywords.length === 0) {
+    const note = el("span",
+      chipClass === "matched" ? "None" : "All matched!",
+      []);
+    note.style.color = "var(--muted)";
+    note.style.fontSize = "12px";
+    container.appendChild(note);
+    return;
+  }
+
+  keywords.forEach(kw => {
+    const chip = el("span", kw, ["kw-chip", chipClass]);
+    container.appendChild(chip);
+  });
+}
+
+// ── Export ────────────────────────────────────────────────────────────────────
+async function exportFile(type) {
+  const sections = collectSections();
+  setLoading(true, "Exporting " + type.toUpperCase() + "\u2026");
+
+  try {
+    const res = await fetch("/api/export", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sections, company: lastCompany, role: lastRole }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error || "Export failed", "error"); return; }
+
+    const noteEl = document.getElementById("export-note");
+    if (data.pdf_error) {
+      noteEl.textContent = "PDF: " + data.pdf_error;
+      noteEl.style.display = "block";
+    } else {
+      noteEl.style.display = "none";
+    }
+
+    if (type === "pdf" && data.pdf_error) {
+      // PDF converter not available — do NOT silently download DOCX.
+      // Show a clear actionable message instead.
+      const noteEl = document.getElementById("export-note");
+      noteEl.textContent = "PDF needs LibreOffice: run  brew install --cask libreoffice  in Terminal, then try again.";
+      noteEl.style.display = "block";
+      showToast("PDF unavailable — LibreOffice not installed", "error");
+      return;
+    }
+
+    // Validate filename before constructing download URL
+    const filename = type === "pdf" ? data.pdf_filename : data.docx_filename;
+    if (filename && /^[\w\-. ]+$/.test(filename)) {
+      triggerDownload("/api/download/" + encodeURIComponent(filename), filename);
+      showToast(filename + " downloaded", "success");
+      loadOutputs();
+    }
+  } catch (e) {
+    showToast("Export error: " + e.message, "error");
+  } finally {
+    setLoading(false);
+  }
+}
+
+function triggerDownload(url, filename) {
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+// ── Copy ──────────────────────────────────────────────────────────────────────
+function copyText() {
+  const s = collectSections();
+  const text = [s.date, s.salutation, s.opening, s.body1, s.body2, s.body3, s.closing, s.name]
+    .filter(Boolean).join("\n\n");
+  navigator.clipboard.writeText(text)
+    .then(() => showToast("Copied to clipboard", "success"))
+    .catch(() => showToast("Copy failed", "error"));
+}
+
+// ── Output history ─────────────────────────────────────────────────────────────
+async function loadOutputs() {
+  try {
+    const res = await fetch("/api/outputs");
+    const files = await res.json();
+    const container = document.getElementById("outputs-list");
+    container.textContent = "";
+
+    if (!files.length) {
+      container.appendChild(el("div", "No files yet.", []));
+      container.firstChild.style.cssText = "color:var(--muted);font-size:12px;";
+      return;
+    }
+
+    files.forEach(f => {
+      const row = el("div", "", ["output-item"]);
+
+      const icon = el("span", f.name.endsWith(".pdf") ? "\uD83D\uDCD5" : "\uD83D\uDCC4", []);
+      icon.style.fontSize = "14px";
+
+      const fname = el("span", f.name, ["fname"]);
+      const meta = el("span", f.size_kb + "K", ["meta"]);
+
+      const link = el("a", "\u2193", []);
+      // Validate filename before building URL
+      if (/^[\w\-. ]+$/.test(f.name)) {
+        link.href = "/api/download/" + encodeURIComponent(f.name);
+        link.setAttribute("download", f.name);
+      } else {
+        link.removeAttribute("href");
+      }
+      link.style.cssText = "font-size:11px;color:var(--accent);text-decoration:none;";
+
+      row.appendChild(icon);
+      row.appendChild(fname);
+      row.appendChild(meta);
+      row.appendChild(link);
+      container.appendChild(row);
+    });
+  } catch (e) { /* silent */ }
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────────────
+function setLoading(on, msg) {
+  const bar = document.getElementById("status-bar");
+  if (msg) setText("status-text", msg);
+  bar.className = on ? "visible" : "";
+  ["btn-generate","btn-export-docx","btn-export-pdf"].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) b.disabled = on;
+  });
+}
+
+let toastTimer;
+function showToast(msg, type) {
+  const toast = document.getElementById("toast");
+  toast.textContent = msg;
+  toast.className = "visible" + (type ? " " + type : "");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.className = ""; }, 3200);
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
