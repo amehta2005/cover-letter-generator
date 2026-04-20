@@ -3,7 +3,7 @@ app.py — Flask application for the local cover letter generator.
 
 Run with:
     python app.py
-Then open http://localhost:5000 in your browser.
+Then open http://127.0.0.1:5001 in your browser.
 """
 
 import os
@@ -276,5 +276,5 @@ if __name__ == "__main__":
     print(f"  Examples : {config.EXAMPLES_DIR}")
     print(f"  Output   : {config.OUTPUT_DIR}")
     print(f"  LLM      : {'enabled' if config.USE_LLM else 'disabled (rule-based mode)'}")
-    print("\nOpen http://localhost:5000 in your browser.\n")
+    print("\nOpen http://127.0.0.1:5001 in your browser.\n")
     app.run(host="127.0.0.1", port=5001, debug=False)
